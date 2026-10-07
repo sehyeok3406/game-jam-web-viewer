@@ -60,6 +60,7 @@ export function validateProject(value: unknown): ViewerProject {
       position: { x: number(position.x), y: number(position.y) },
       width: number(doc.width),
       height: number(doc.height),
+      ...(doc.onCanvas === false ? { onCanvas: false } : {}),
       ...(image ? { image } : {}),
       ...(doc.html !== undefined ? { html: string(doc.html, 4_000_000) } : {}),
     };

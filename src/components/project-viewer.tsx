@@ -349,7 +349,11 @@ export function ProjectViewer({ project }: { project: ViewerProject }) {
         </div>
       </main>
       <DocumentDialog
-        document={modalDocument}
+        document={
+          project.documents.find(
+            (document) => document.id === modalDocument?.id,
+          ) ?? null
+        }
         onClose={() => setModalDocument(null)}
       />
     </div>

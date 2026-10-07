@@ -44,7 +44,10 @@ function DocumentCard({ data }: NodeProps<DocumentNode>) {
   );
 }
 
-const nodeTypes = { document: DocumentCard };
+function SectionCard({ data }: NodeProps<DocumentNode>) {
+  return <div className="canvas-section-title">{data.document.title}</div>;
+}
+const nodeTypes = { document: DocumentCard, group: SectionCard };
 const nodeColor = (node: DocumentNode) =>
   ({
     cream: '#ecdba8',
@@ -73,22 +76,26 @@ export default function ProjectCanvas({
 }) {
   const nodes = useMemo<DocumentNode[]>(
     () =>
-      documents.map((document) => ({
-        id: document.id,
-        type: 'document',
-        position: document.position,
-        data: { document, onOpen },
-        // Read-only nodes disable wrapper events by default; keep the document button clickable.
-        style: {
-          pointerEvents: 'all',
-          width: document.width ? Math.max(180, document.width) : undefined,
-          height: document.height ? Math.max(150, document.height) : undefined,
-        },
-        draggable: false,
-        selectable: false,
-        connectable: false,
-        deletable: false,
-      })),
+      documents
+        .filter((document) => document.onCanvas !== false)
+        .map((document) => ({
+          id: `document:${document.id}`,
+          type: 'document',
+          position: document.position,
+          data: { document, onOpen },
+          // Read-only nodes disable wrapper events by default; keep the document button clickable.
+          style: {
+            pointerEvents: 'all',
+            width: document.width ? Math.max(180, document.width) : undefined,
+            height: document.height
+              ? Math.max(150, document.height)
+              : undefined,
+          },
+          draggable: false,
+          selectable: false,
+          connectable: false,
+          deletable: false,
+        })),
     [documents, onOpen],
   );
   return (
@@ -134,7 +141,7 @@ export default function ProjectCanvas({
       deleteKeyCode={null}
       fitView
       fitViewOptions={{ padding: 0.15 }}
-      minZoom={0.3}
+      minZoom={0.05}
       maxZoom={1.8}
       proOptions={{ hideAttribution: false }}
       ariaLabelConfig={{

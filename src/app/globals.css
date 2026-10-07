@@ -2227,3 +2227,9 @@ p {
     height: 430px;
   }
 }
+.canvas-section-title {
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #858171;
+}

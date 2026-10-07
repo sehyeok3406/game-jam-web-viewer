@@ -10,6 +10,7 @@ export type ViewerDocument = {
   color: 'cream' | 'green' | 'blue' | 'rose' | 'purple' | 'gray';
   width?: number;
   height?: number;
+  onCanvas?: boolean;
   image?: string;
   html?: string;
 };
