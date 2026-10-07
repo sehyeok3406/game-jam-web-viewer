@@ -1,65 +1,34 @@
 # Game Jam! Web Viewer
 
-Game Jam! 프로젝트를 모바일·다른 PC에서 읽는 웹 뷰어의 초기 배포입니다. Next.js App Router, React, TypeScript를 사용합니다.
+https://game-jam-web-viewer.vercel.app
 
-## 현재 제공하는 기능
+첫 화면에서 연결된 로컬·공동 프로젝트를 검색·분류하고 선택하면 해당 프로젝트의 문서·캔버스를 읽는다. PC의 Game Jam! 홈 **웹 뷰어**에서 게시하고 보기 코드를 복사한다. 외부 기기는 코드로 연결하며 30일 동안 HttpOnly/SameSite 쿠키를 사용한다. 공개 예제는 `/view/demo`에 별도로 유지한다. 인증하지 않은 요청에는 실제 목록·본문을 반환하지 않는다.
 
-- 모바일·PC 홈 화면과 읽기 전용 공개 예제 `/view/demo`.
-- 문서 본문·표·비활성 체크리스트, 문서 검색과 섹션 필터.
-- 원본 배치를 바꾸지 않는 캔버스 이동·확대·축소와 문서 상세 보기.
-- 상태 확인 `GET /api/health`, 공개 예제 조회 `GET /api/view/demo`.
-- Vercel 배포 설정과 GitHub Actions 빌드·정적 검사·HTTP 검증.
+프로젝트는 Vercel **Private Blob**에 저장한다. 게시용 키와 보기 코드는 독립된 무작위 32바이트 키이다. 서버 환경에는 원문 대신 각각의 SHA-256 hex 해시를 저장한다. 읽기 세션은 게시를 허용하지 않으며, 게시 API는 데스크톱 키가 필요하다. DTO 허용 목록으로 협업 자격증명·절대 경로·AI 작업 파일을 제외한다. HTML 결과는 별도의 opaque-origin iframe에서 CSP와 sandbox로 외부 네트워크·상위 페이지 접근을 차단한다. 문서 외부 이미지는 자동으로 요청하지 않는다. 각 프로젝트 게시 요청은 4MB까지 지원하고 초과 시 실패한다.
 
-**실제 프로젝트 연결은 아직 구현되지 않았습니다.** 공개 예제는 새로 작성한 합성 데이터이며 개인 문서·서버 토큰·사용자 프로젝트를 포함하지 않습니다. `demo` 이외의 API 조회는 `503 PROJECT_SOURCE_NOT_CONFIGURED`를 반환합니다. API는 GET만 구현하며 POST·PUT·PATCH·DELETE는 405로 거부합니다. 이것은 초기 배포의 동작이며 실제 프로젝트 인증 구현을 대신하지 않습니다.
+공동 프로젝트와 로컬 자동 갱신은 이 PC의 연결 프로그램이 약 15초마다 저장 내용을 확인한다. 웹 뷰어도 활성 화면에서 15초마다 새 게시본을 조회한다. 변경이 없으면 다시 업로드하지 않는다. 로컬 수동 게시본은 PC 앱에서 다시 게시해야 갱신된다. PC나 서버가 꺼지면 마지막 게시본을 유지하며 게시 시각을 표시한다. 이 단계는 단일 소유자의 연결 코드로 전체 게시 프로젝트를 조회한다. 사용자별 계정·프로젝트별 공유 권한은 아직 제공하지 않는다.
 
-## 로컬 실행
+## 실행 및 검증
 
-Node.js 24를 사용합니다. 초기 화면·예제에는 환경변수가 필요하지 않습니다.
+Node.js 24, Next.js 16, React 19를 사용한다.
 
 ```sh
 npm ci
 npm run dev
-```
-
-기본 주소는 `http://127.0.0.1:3000`입니다.
-
-```sh
 npm run lint
+npm run test:connection
 npm run build
 npm run typecheck
 npm run start -- --hostname 127.0.0.1 --port 3080
-# 다른 터미널에서 실행
 npm run test:smoke -- http://127.0.0.1:3080
 ```
 
+`test:connection`은 임시 개발 저장소와 합성 데이터를 사용해 게시→인증→프로젝트 목록→문서 조회·수정본 갱신, 자격증명 필터링, Origin·게시 권한·변경 요청 거부를 검증한다. 테스트용 파일 저장소는 production에서 사용할 수 없다. 실제 개인 문서나 키는 테스트·Git에 넣지 않는다.
+
 ## Vercel
 
-| 설정                           | 값                                 |
-| ------------------------------ | ---------------------------------- |
-| Git repository                 | `sehyeok3406/game-jam-web-viewer`  |
-| Production branch              | `main`                             |
-| Framework / Application Preset | Next.js                            |
-| Root Directory                 | `./`                               |
-| Install Command                | `npm ci`                           |
-| Build Command                  | `npm run build`                    |
-| Output Directory               | Next.js 기본값; 수동 Override 없음 |
-| Node.js                        | 24.x (`package.json`에서 지정)     |
-| Environment Variables          | 초기 배포에는 없음                 |
+Next.js 프리셋, 루트 `./`, `npm ci`, `npm run build`, Node.js 24.x, 기본 출력 설정. `main` 푸시 시 자동 배포한다. 프로젝트의 Storage에서 **Private Blob**을 연결하면 `BLOB_STORE_ID`가 추가되고 SDK가 Vercel OIDC로 인증한다. 키 해시 `VIEWER_READ_KEY_HASH`, `VIEWER_PUBLISH_KEY_HASH`는 서버 환경에만 설정한다. `.env.example`을 참고하고 `NEXT_PUBLIC_*`에는 비밀 값을 넣지 않는다. 보기 해시 교체 시 기존 코드와 모든 세션이 회수된다. 공유 코드가 유출되면 보기 코드와 해시를 함께 교체한다.
 
-`vercel.json`에도 Next.js 프레임워크·빌드 설정을 지정했습니다. 프로젝트는 `game-jam-web-viewer.vercel.app` 고정 주소를 사용합니다. Git 연결 후 `main`에 푸시하면 새 배포를 생성합니다. GitHub에는 코드와 합성 예제만 보관하며 사용자 프로젝트 데이터·비밀 값은 커밋하지 않습니다.
+API: `GET /api/session`, `POST/DELETE /api/session`, 인증된 `GET /api/projects`, `GET /api/view/[id]`, 데스크톱 전용 `POST /api/publish`, `GET /api/health`. 공개 예제를 제외한 개인 데이터는 `private, no-store`로 응답한다. 읽기 API의 POST·PUT·PATCH·DELETE는 405로 거부한다.
 
-## 다음 구현
-
-한 웹 뷰어에서 세 가지 데이터 소스를 지원할 예정입니다.
-
-| 데이터 소스   | 웹에 보이는 내용                     | 실행 조건                       |
-| ------------- | ------------------------------------ | ------------------------------- |
-| 공동 프로젝트 | 협업 서버 최신 내용                  | 협업 서버와 외부 접속 경로 실행 |
-| 로컬 게시본   | 마지막으로 외부 저장소에 게시한 내용 | 내 PC 종료 후에도 조회 가능     |
-| 로컬 실시간   | PC에서 저장한 최신 내용              | PC·제공 프로그램·외부 연결 실행 |
-
-보기 링크별 인증·만료·회수, 비공개 게시본 저장소·메타데이터 DB, 기존 데스크톱/협업 서버의 읽기 전용 API 또는 게시 연결을 추가해야 합니다. 링크가 없거나 인증이 실패했을 때 예제 데이터로 대체하지 않습니다. 실제 데이터 조회·파일 반환 경로에서 권한을 검사해야 합니다.
-
-`src/lib/project.ts`는 표시용 데이터 계약의 시작점입니다. 로컬 절대 경로·AI 작업 지시 파일·관리자 자격증명은 포함하지 않습니다. 실제 저장소 연결 시 서버용 환경변수를 추가하고 `.env.example`과 이 문서를 함께 갱신합니다. 비밀 값은 `NEXT_PUBLIC_*`에 넣지 않습니다.
-
-기존 Electron 앱과 협업 서버는 [`game-jam-dev`](https://github.com/sehyeok3406/game-jam-dev)에서 관리합니다. 이번 초기 배포는 기존 앱·운영 서버를 변경하지 않습니다.
+데스크톱 연결 구현: [`game-jam-dev/tools/web-viewer`](https://github.com/sehyeok3406/game-jam-dev/tree/main/tools/web-viewer).

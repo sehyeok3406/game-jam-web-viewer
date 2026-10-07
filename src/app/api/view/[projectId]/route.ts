@@ -1,4 +1,6 @@
 import { demoProject } from '@/lib/demo';
+import { authenticated, failure, privateHeaders } from '@/lib/auth';
+import { loadProject } from '@/lib/storage';
 
 /** Only the synthetic demo is public. Real project authentication is not implemented yet. */
 export async function GET(
@@ -10,13 +12,18 @@ export async function GET(
     return Response.json(demoProject, {
       headers: { 'Cache-Control': 'no-store' },
     });
-  return Response.json(
-    {
-      error: {
-        code: 'PROJECT_SOURCE_NOT_CONFIGURED',
-        message: '실제 프로젝트 조회 기능은 아직 연결되지 않았습니다.',
-      },
-    },
-    { status: 503, headers: { 'Cache-Control': 'no-store' } },
-  );
+  if (!(await authenticated()))
+    return failure(401, 'UNAUTHORIZED', '프로젝트를 보려면 연결해주세요.');
+  try {
+    const project = await loadProject(projectId);
+    return project
+      ? Response.json(project, { headers: privateHeaders })
+      : failure(404, 'PROJECT_NOT_FOUND', '프로젝트를 찾을 수 없습니다.');
+  } catch {
+    return failure(
+      503,
+      'STORAGE_UNAVAILABLE',
+      '프로젝트를 불러오지 못했습니다. 다시 시도해주세요.',
+    );
+  }
 }

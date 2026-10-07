@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import Image from 'next/image';
 import remarkGfm from 'remark-gfm';
 import {
   ArrowLeft,
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Brand } from './brand';
 import type { ViewerDocument, ViewerProject } from '@/lib/project';
+import { sourceNames } from './project-home';
 
 const ProjectCanvas = dynamic(() => import('./project-canvas'), {
   ssr: false,
@@ -45,6 +47,25 @@ function DocumentContent({ document }: { document: ViewerDocument }) {
       </div>
       <h2>{document.title}</h2>
       <p className="document-summary">{document.summary}</p>
+      {document.image && (
+        <Image
+          unoptimized
+          className="viewer-image"
+          src={document.image}
+          width={1200}
+          height={900}
+          alt={document.title}
+        />
+      )}
+      {document.html && (
+        <iframe
+          className="viewer-html"
+          title={`${document.title} 미리보기`}
+          sandbox="allow-scripts"
+          referrerPolicy="no-referrer"
+          srcDoc={`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none';">${document.html}`}
+        />
+      )}
       <div className="markdown-content">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
@@ -61,6 +82,11 @@ function DocumentContent({ document }: { document: ViewerDocument }) {
               <a href={href} target="_blank" rel="noopener noreferrer">
                 {children}
               </a>
+            ),
+            img: ({ alt }) => (
+              <span className="embedded-image-note">
+                {alt ? `이미지: ${alt}` : '외부 이미지'} (원본 앱에서 보기)
+              </span>
             ),
           }}
         >
@@ -135,11 +161,11 @@ export function ProjectViewer({ project }: { project: ViewerProject }) {
           .toLocaleLowerCase('ko')
           .includes(normalized)),
   );
-  const selected = project.documents.find(
-    (document) => document.id === selectedId,
-  );
+  const selected =
+    project.documents.find((document) => document.id === selectedId) ??
+    project.documents[0];
   const selectedIndex = project.documents.findIndex(
-    (document) => document.id === selectedId,
+    (document) => document.id === selected?.id,
   );
 
   return (
@@ -154,11 +180,13 @@ export function ProjectViewer({ project }: { project: ViewerProject }) {
         <div className="project-header">
           <div>
             <Link href="/" className="project-back">
-              <ArrowLeft size={14} /> 웹 뷰어 홈
+              <ArrowLeft size={14} /> 프로젝트 목록
             </Link>
             <div className="project-title-row">
               <h1>{project.name}</h1>
-              <span className="sample-label">공개 예제</span>
+              <span className="sample-label">
+                {sourceNames[project.source]}
+              </span>
             </div>
             <p>{project.description}</p>
           </div>
@@ -182,8 +210,9 @@ export function ProjectViewer({ project }: { project: ViewerProject }) {
         <div className="demo-notice">
           <span className="status-dot" />
           <span>
-            웹 뷰어 체험용 공개 예제입니다. 실제 프로젝트와 연결되어 있지
-            않습니다.
+            {project.source === 'demo'
+              ? '웹 뷰어 체험용 공개 예제입니다.'
+              : `게시 ${new Date(project.publishedAt ?? 0).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} · ${project.source === 'published' ? 'PC 앱에서 다시 게시하면 갱신됩니다.' : '연결 프로그램이 실행 중이면 저장 내용을 자동 갱신합니다.'}`}
           </span>
         </div>
         <div className="viewer-workspace">
@@ -307,7 +336,11 @@ export function ProjectViewer({ project }: { project: ViewerProject }) {
             </section>
           ) : (
             <section className="canvas-region" aria-label="프로젝트 캔버스">
-              <ProjectCanvas documents={filtered} onOpen={setModalDocument} />
+              <ProjectCanvas
+                documents={filtered}
+                sections={project.sections ?? []}
+                onOpen={setModalDocument}
+              />
               <div className="canvas-hint">
                 드래그로 이동 · 확대/축소 · 카드를 눌러 문서 읽기
               </div>

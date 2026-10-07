@@ -8,7 +8,11 @@ while (true) {
       signal: AbortSignal.timeout(3000),
     });
     assert.equal(health.status, 200);
-    assert.equal((await health.json()).projectSource, 'not-configured');
+    assert.ok(
+      ['not-configured', 'private-published-projects'].includes(
+        (await health.json()).projectSource,
+      ),
+    );
     break;
   } catch (error) {
     if (Date.now() > deadline) throw error;
@@ -35,9 +39,9 @@ assert.equal(project.documents.length, 4);
 assert.equal(project.token, undefined);
 
 const unavailable = await fetch(`${base}/api/view/a-real-project`);
-assert.equal(unavailable.status, 503);
+assert.equal(unavailable.status, 401);
 const unavailableBody = await unavailable.json();
-assert.equal(unavailableBody.error.code, 'PROJECT_SOURCE_NOT_CONFIGURED');
+assert.equal(unavailableBody.error.code, 'UNAUTHORIZED');
 assert.equal(unavailableBody.documents, undefined);
 
 for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
@@ -50,7 +54,8 @@ for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
 
 const deepLink = await fetch(`${base}/view/a-real-project`);
 assert.equal(deepLink.status, 200);
-assert.match(await deepLink.text(), /아직 실제 프로젝트/);
+assert.match(await deepLink.text(), /프로젝트를 불러오는 중/);
+assert.equal((await fetch(`${base}/api/projects`)).status, 401);
 assert.equal((await fetch(`${base}/a-missing-page`)).status, 404);
 console.log(
   'PASS: production routes, demo source, unsupported sources, read-only API methods and headers',

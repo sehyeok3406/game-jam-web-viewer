@@ -15,7 +15,7 @@ import '@xyflow/react/dist/style.css';
 
 type DocumentNode = Node<
   { document: ViewerDocument; onOpen: (document: ViewerDocument) => void },
-  'document'
+  'document' | 'group'
 >;
 
 function DocumentCard({ data }: NodeProps<DocumentNode>) {
@@ -46,15 +46,29 @@ function DocumentCard({ data }: NodeProps<DocumentNode>) {
 
 const nodeTypes = { document: DocumentCard };
 const nodeColor = (node: DocumentNode) =>
-  ({ cream: '#ecdba8', green: '#bad7bf', blue: '#c4d8e4', rose: '#e6c9c5' })[
-    node.data.document.color
-  ];
+  ({
+    cream: '#ecdba8',
+    green: '#bad7bf',
+    blue: '#c4d8e4',
+    rose: '#e6c9c5',
+    purple: '#d4c4e8',
+    gray: '#c9c9c9',
+  })[node.data.document.color];
 
 export default function ProjectCanvas({
   documents,
+  sections,
   onOpen,
 }: {
   documents: ViewerDocument[];
+  sections: {
+    id: string;
+    title: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[];
   onOpen: (document: ViewerDocument) => void;
 }) {
   const nodes = useMemo<DocumentNode[]>(
@@ -65,7 +79,11 @@ export default function ProjectCanvas({
         position: document.position,
         data: { document, onOpen },
         // Read-only nodes disable wrapper events by default; keep the document button clickable.
-        style: { pointerEvents: 'all' },
+        style: {
+          pointerEvents: 'all',
+          width: document.width ? Math.max(180, document.width) : undefined,
+          height: document.height ? Math.max(150, document.height) : undefined,
+        },
         draggable: false,
         selectable: false,
         connectable: false,
@@ -76,7 +94,38 @@ export default function ProjectCanvas({
   return (
     <ReactFlow<DocumentNode>
       key={documents.map((document) => document.id).join(',')}
-      nodes={nodes}
+      nodes={[
+        ...sections.map((section): DocumentNode => ({
+          id: `section:${section.id}`,
+          type: 'group',
+          position: { x: section.x, y: section.y },
+          data: {
+            document: {
+              id: section.id,
+              title: section.title,
+              kind: 'document',
+              section: section.title,
+              summary: '',
+              body: '',
+              position: { x: section.x, y: section.y },
+              color: 'gray',
+            },
+            onOpen,
+          },
+          style: {
+            width: section.width,
+            height: section.height,
+            background: '#e9e4d540',
+            border: '1px dashed #ada896',
+            pointerEvents: 'none',
+          },
+          ariaLabel: section.title,
+          selectable: false,
+          draggable: false,
+          deletable: false,
+        })),
+        ...nodes,
+      ]}
       edges={[]}
       nodeTypes={nodeTypes}
       nodesDraggable={false}

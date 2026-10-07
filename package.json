@@ -1,6 +1,6 @@
 {
   "name": "game-jam-web-viewer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Read-only web viewer for Game Jam! projects.",
   "scripts": {
@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:smoke": "node scripts/smoke.mjs"
+    "test:smoke": "node scripts/smoke.mjs",
+    "test:connection": "node scripts/connection-test.mjs"
   },
   "engines": {
     "node": "24.x"
@@ -17,6 +18,7 @@
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",
     "@fontsource-variable/noto-sans-kr": "^5.3.0",
+    "@vercel/blob": "^2.8.1",
     "@xyflow/react": "12.12.0",
     "lucide-react": "1.52.0",
     "next": "16.4.0",
