@@ -1,0 +1,28 @@
+name: Check web viewer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run typecheck
+      - run: |
+          npm run start -- --hostname 127.0.0.1 --port 3080 > /tmp/game-jam-web-viewer.log 2>&1 &
+          npm run test:smoke -- http://127.0.0.1:3080
+        env:
+          CI: true

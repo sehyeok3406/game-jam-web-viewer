@@ -1,0 +1,37 @@
+{
+  "name": "game-jam-web-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only web viewer for Game Jam! projects.",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:smoke": "node scripts/smoke.mjs"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource-variable/noto-sans-kr": "^5.3.0",
+    "@xyflow/react": "12.12.0",
+    "lucide-react": "1.52.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.4.0",
+    "prettier": "^3.9.9",
+    "typescript": "^6.0.3"
+  }
+}
